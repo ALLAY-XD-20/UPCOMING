@@ -5,7 +5,7 @@ import time
 import threading
 import re
 
-# Custom ASCII
+# Custom ASCII Logo
 ASCII_LOGO = """\
     █████╗ ██╗     ██████╗ ██╗  ██╗ █████╗     ██████╗ ███████╗██╗   ██╗
     ██╔══██╗██║     ██╔══██╗██║  ██║██╔══██╗    ██╔══██╗██╔════╝██║   ██║
@@ -29,31 +29,30 @@ def setup_hacker_style(widget):
     widget.tag_configure("center", justify='center')
     widget.tag_add("center", "1.0", "end")
 
-# Combo search logic
 def load_folder_and_search(folder_path, search_term, output_widget):
     search_term_lower = search_term.lower()
-    domain_pattern = re.compile(rf"(https?://[^\s]*{search_term_lower}[^\s]*)|([^\s]*{search_term_lower}\.[a-z]{{2,}}[^\s]*)", re.IGNORECASE)
+    # Regex for http/https and domain with app name
+    pattern = re.compile(rf"(https?://[^\s]*{search_term_lower}[^\s]*)|([^\s]*{search_term_lower}\.[a-z]{{2,6}}[^\s]*)", re.IGNORECASE)
 
     results = []
     for root, _, files in os.walk(folder_path):
         for file in files:
-            if file.endswith('.txt'):
-                try:
-                    with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
-                        lines = f.readlines()
-                        for line in lines:
-                            if domain_pattern.search(line):
-                                results.append(line.strip())
-                except Exception as e:
-                    print(f"Failed to read {file}: {e}")
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        if pattern.search(line):
+                            results.append(line.strip())
+            except Exception as e:
+                print(f"Error reading {file}: {e}")
 
-    out_filename = f"result_{search_term.upper()}.txt"
-    with open(out_filename, "w", encoding="utf-8") as out_file:
-        for result in results:
-            out_file.write(result + "\n")
-    
+    output_file = f"result_{search_term.upper()}.txt"
+    with open(output_file, "w", encoding="utf-8") as out:
+        out.write('\n'.join(results))
+
     output_widget.config(state=tk.NORMAL)
-    output_widget.insert(tk.END, f"\n\n✔️ Found {len(results)} matching lines.\nSaved to '{out_filename}'\n")
+    output_widget.insert(tk.END, f"\n✔️ Found {len(results)} matching lines.\n✔️ Saved to '{output_file}'\n")
     output_widget.config(state=tk.DISABLED)
 
 def browse_folder():
@@ -72,20 +71,20 @@ def start_search():
     output_box2.config(state=tk.DISABLED)
     threading.Thread(target=load_folder_and_search, args=(folder_path, search_term, output_box2)).start()
 
-# GUI
+# GUI Setup
 root = tk.Tk()
 root.title("ALPHA DEV")
 root.configure(bg="black")
 root.geometry("800x600")
 root.resizable(False, False)
 
-# ASCII Output
+# ASCII Logo Area
 output_box = tk.Text(root, height=12, bg="black", fg="lime", font=("Courier", 10), bd=0)
 output_box.pack(pady=10, padx=20)
 setup_hacker_style(output_box)
 threading.Thread(target=type_text, args=(output_box, ASCII_LOGO)).start()
 
-# Folder
+# Folder Input
 folder_label = tk.Label(root, text="📂 Select Combo Folder", bg="black", fg="lime")
 folder_label.pack()
 folder_entry = tk.Entry(root, width=60, bg="black", fg="lime", insertbackground="lime")
@@ -93,17 +92,17 @@ folder_entry.pack(pady=5)
 folder_button = tk.Button(root, text="Browse", command=browse_folder, bg="lime", fg="black")
 folder_button.pack()
 
-# Search input
-search_label = tk.Label(root, text="🔍 Paste You Searching (e.g. microsoft, netflix)", bg="black", fg="lime")
+# Search Term
+search_label = tk.Label(root, text="🔍 Enter App Name (Example: microsoft)", bg="black", fg="lime")
 search_label.pack(pady=10)
 search_entry = tk.Entry(root, width=40, bg="black", fg="lime", insertbackground="lime")
 search_entry.pack(pady=5)
 
-# Start button
+# Start Button
 search_button = tk.Button(root, text="Start Search", command=start_search, bg="lime", fg="black", width=20)
 search_button.pack(pady=10)
 
-# Result output
+# Results Box
 output_box2 = tk.Text(root, height=10, bg="black", fg="lime", font=("Courier", 10), bd=0)
 output_box2.pack(pady=10, padx=20)
 output_box2.config(state=tk.DISABLED)
