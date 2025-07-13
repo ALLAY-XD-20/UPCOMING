@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pyfiglet
+import os
 
-# Generate ASCII Header
+# ASCII Banner
 ASCII_HEADER = pyfiglet.figlet_format("ALPHA DEV")
 
 class AlphaDevApp:
@@ -12,23 +13,22 @@ class AlphaDevApp:
         self.root.geometry("800x600")
         self.root.configure(bg="black")
 
-        # Text widget for animated ASCII output
-        self.ascii_text = tk.Text(root, height=10, bg="black", fg="lime", font=("Courier", 10), borderwidth=0)
+        # ASCII Display (Typing Style)
+        self.ascii_text = tk.Text(root, height=10, bg="black", fg="lime",
+                                  font=("Courier", 10), borderwidth=0)
         self.ascii_text.pack()
         self.ascii_text.configure(state="disabled")
-
-        # Typing animation
         self.ascii_chars = list(ASCII_HEADER)
         self.char_index = 0
         self.animate_ascii()
 
-        # Load Combo Button
-        self.load_button = tk.Button(root, text="🔍 Load Combo File", command=self.load_file,
+        # Load Combo Folder Button
+        self.load_button = tk.Button(root, text="📁 Load Combo Folder", command=self.load_folder,
                                      bg="black", fg="lime", activebackground="lime", activeforeground="black",
                                      font=("Courier", 12, "bold"), borderwidth=2)
         self.load_button.pack(pady=10)
 
-        # Search Input
+        # Search Entry
         self.search_label = tk.Label(root, text="📎 PASTE YOU SEARCHING (App Name):", fg="lime",
                                      bg="black", font=("Courier", 10))
         self.search_label.pack()
@@ -54,19 +54,27 @@ class AlphaDevApp:
             self.ascii_text.insert("end", self.ascii_chars[self.char_index])
             self.ascii_text.configure(state="disabled")
             self.char_index += 1
-            self.root.after(5, self.animate_ascii)  # 5ms per character for fast animation
+            self.root.after(5, self.animate_ascii)
 
-    def load_file(self):
-        file_path = filedialog.askopenfilename(title="Select Combo File")
-        if file_path:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                self.file_data = f.readlines()
-            self.status_label.config(text=f"✔ Loaded {len(self.file_data)} lines from file.")
+    def load_folder(self):
+        folder_path = filedialog.askdirectory(title="Select Folder Containing Combo Files")
+        if folder_path:
+            all_lines = []
+            for filename in os.listdir(folder_path):
+                if filename.endswith(".txt"):
+                    full_path = os.path.join(folder_path, filename)
+                    try:
+                        with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            all_lines.extend(f.readlines())
+                    except Exception as e:
+                        print(f"Failed to read {filename}: {e}")
+            self.file_data = all_lines
+            self.status_label.config(text=f"✔ Loaded {len(self.file_data)} lines from folder.")
 
     def search_and_save(self):
         keyword = self.search_entry.get().strip()
         if not self.file_data:
-            messagebox.showerror("Error", "⚠ Please load a file first.")
+            messagebox.showerror("Error", "⚠ Please load a folder with combo files first.")
             return
         if not keyword:
             messagebox.showerror("Error", "⚠ Please enter an app name to search.")
@@ -83,7 +91,7 @@ class AlphaDevApp:
             self.status_label.config(text="❌ No results found.")
             messagebox.showinfo("No Match", "❌ No matching lines found.")
 
-# Run GUI
+# Run the App
 if __name__ == "__main__":
     root = tk.Tk()
     app = AlphaDevApp(root)
